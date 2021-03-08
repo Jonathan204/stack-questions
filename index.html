@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<style>
+.collapsible {
+  background-color: #777;
+  color: white;
+  cursor: pointer;
+  padding: 18px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+  font-size: 15px;
+}
+
+.active, .collapsible:hover {
+  background-color: #555;
+}
+
+.content {
+  padding: 0 18px;
+  display: none;
+  overflow: hidden;
+  background-color: #f1f1f1;
+  white-space: pre-line;
+}
+
+.comment {
+  padding-left: 20px;
+  font-size: small;
+}
+.titleDiv{
+  display: none;
+}
+</style>
+</head>
+<body>
+
+<h2>Enter Tags here!</h2>
+
+
+
+<div class="search-container">
+        Enter tag: <input id="tagInput" type="text" name="tag">
+        <button onclick="findTag()">Submit</button>
+        <div id="res"></div>
+</div>
+
+<div id="items" class = "titleDiv">
+<H3>Questions!</H3>
+  <div id = "item0"></div>
+  <div id = "item1"></div>
+  <div id = "item2"></div>
+  <div id = "item3"></div>
+  <div id = "item4"></div>
+  <div id = "item5"></div>
+  <div id = "item6"></div>
+  <div id = "item7"></div>
+  <div id = "item8"></div>
+  <div id = "item9"></div>
+  <div id = "item10"></div>
+  <div id = "item11"></div>
+  <div id = "item12"></div>
+  <div id = "item13"></div>
+  <div id = "item14"></div>
+  <div id = "item15"></div>
+  <div id = "item16"></div>
+  <div id = "item17"></div>
+  <div id = "item18"></div>
+  <div id = "item19"></div>
+</div>
+
+
+
+<p id="responseTime"></p>
+<script>
+
+var loaded = false;
+
+
+function buttonScript(){
+  var coll = document.getElementsByClassName("collapsible");
+  var i;
+
+for (i = 0; i < coll.length; i++) {
+  coll[i].addEventListener("click", function() {
+    this.classList.toggle("active");
+    var content = this.nextElementSibling;
+    if (content.style.display === "block") {
+      content.style.display = "none";
+    } else {
+      content.style.display = "block";
+    }
+  });
+}
+
+}
+function stripHtml(html)
+{
+   let tmp = document.createElement("DIV");
+   tmp.innerHTML = html;
+   return tmp.textContent || tmp.innerText || "";
+}
+
+function resetPage(){
+  for(var i = 0; i<20; i++){
+    const node = document.getElementById("item"+ i);
+    node.innerHTML = '';
+  }
+}
+
+function displayHTML(){
+  document.getElementById('items').style.display = "block";
+}
+
+async function findTag(){
+
+  resetPage();
+  
+  var tag = document.getElementById("tagInput").value;
+
+  var responseTime = 0;
+      loaded = true;
+      
+        displayHTML();
+
+        const baseAPI = "https://api.stackexchange.com/2.2";
+        const newestQuestions = `${baseAPI}/questions?pagesize=10&order=desc&sort=creation&tagged=${tag}&site=stackoverflow&filter=!)TJ5Pvp15kWTT5blbc(UOy40vQ1NKGQNOAXuTwUeiVAUKFIMtm-3Ef5ZH`;
+        const hottesttQuestions = `${baseAPI}/questions?pagesize=10&order=desc&sort=week&tagged=${tag}&site=stackoverflow&filter=!)TJ5Pvp15kWTT5blbc(UOy40vQ1NKGQNOAXuTwUeiVAUKFIMtm-3Ef5ZH`;
+    
+        var sendDate = (new Date()).getTime();
+        var newResponse = await fetch(newestQuestions);
+        var hotResponse = await fetch(hottesttQuestions);
+        var receiveDate = (new Date()).getTime();
+        var newJson = await newResponse.json();
+        var hotJson = await hotResponse.json();
+        var newItems = newJson.items;
+        var hotItems = hotJson.items;
+
+        var finalItems = newItems.concat(hotItems);
+        finalItems.sort(function (a, b) {
+          return b.creation_date - a.creation_date;
+        });
+
+        var count = 0;
+
+        for(item of finalItems){
+            if(count < 20 ){
+                var b = document.createElement('button');
+                b.setAttribute('id', 'newbtn'+count);
+                b.setAttribute('type', 'button');
+                b.setAttribute('class', 'collapsible');
+                b.setAttribute('style', 'white-space: pre;');
+
+                var div = document.createElement('div');
+                div.setAttribute('class', 'content');
+
+                var p = document.createElement('p');
+                p.textContent = stripHtml(item.body);
+                div.appendChild(p);
+
+                if(item.comments != null){
+                  var comments = item.comments;
+                  for(comment of comments){
+                    var hr = document.createElement('hr');
+                    div.appendChild(hr);
+                    var commentBody = document.createElement('p');
+                    commentBody.setAttribute('class', 'comment');  
+                    var commentDate = "";
+                    commentDate += new Date(comment.creation_date*1000);
+                    commentDate = commentDate.substring(0, 24);
+
+                    commentBody.textContent = "Date created: "+ commentDate +'\n' + 'Score: ' + comment.score + '\n'+ stripHtml(comment.body);
+                    div.appendChild(commentBody);
+                  }
+                  
+                }
+
+                if(item.answers != null){
+                  var h3 = document.createElement('h3');
+                  h3.textContent = "Answers";
+                  div.appendChild(h3);
+                  var answers = item.answers;
+                  var answerCount = 1;
+                  for(answer of answers){
+                    var answerBody = document.createElement('p');
+                    answerBody.setAttribute('style', 'white-space: pre-line');
+                    var answerDate = "";
+                    answerDate += new Date(answer.creation_date*1000);
+                    answerDate = answerDate.substring(0, 24);
+
+
+                    answerBody.textContent = "Date created: "+ answerDate +'\n' + 'Upvotes: ' + answer.up_vote_count + '\n' + 'Downvotes: '+ answer.down_vote_count + '\n\n'+ stripHtml(answer.body);
+                    var answerNumber = document.createElement('h4');
+                    answerNumber.textContent = "Answer " + answerCount;
+                    div.appendChild(answerNumber);
+                    div.appendChild(answerBody);
+
+                    if(answer.comments != null){
+                      var comments = answer.comments;
+                      for(comment of comments){
+                        var hr = document.createElement('hr');
+                        div.appendChild(hr);
+                        var commentBody = document.createElement('p');
+                        commentBody.setAttribute('class', 'comment');  
+                        var commentDate = "";
+                        commentDate += new Date(comment.creation_date*1000);
+                        commentDate = commentDate.substring(0, 24);
+
+                        commentBody.textContent = "Date created: "+ commentDate +'\n' + 'Score: ' + comment.score + '\n'+ stripHtml(comment.body);
+                        div.appendChild(commentBody);
+                      }
+                    }
+
+                    answerCount++;
+                  }
+                }
+
+                var titleContent = "";
+
+                var br = document.createElement("br");
+                var theDate = "";
+                theDate += new Date(item.creation_date*1000);
+                theDate = theDate.substring(0, 24);
+
+
+                titleContent = titleContent + item.title + '\n';
+                
+                titleContent = titleContent + "Date created: " + theDate + '\n';
+
+                titleContent = titleContent + "Upvotes: " + item.up_vote_count + '\n';
+
+                titleContent = titleContent + "Downvotes: " + item.down_vote_count + '\n';
+
+                b.textContent = titleContent;
+
+                
+                var element = document.getElementById("item"+count);
+                element.appendChild(b);  
+                element.appendChild(div);
+           
+            }
+            count++;
+          
+
+        }
+
+        buttonScript();
+
+        responseTime = receiveDate - sendDate;
+        var printResponseTime = "Response time: " + responseTime +"ms";
+        document.getElementById('responseTime').textContent = printResponseTime;
+      }
+    
+
+</script>
+
+</body>
+</html>
